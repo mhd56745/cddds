@@ -43,7 +43,6 @@ if [ -n "${MEDIA_URL:-}" ]; then
 fi
 
 # ---------- تهيئة البيانات: بذرة SEED_JSON + ترحيل المتغيرات القديمة ----------
-# + استيراد ملفات media/ المدمجة في الصورة + أول توليد للخرائط ومواقع القنوات
 echo "[entrypoint] تهيئة لوحة التحكم والقنوات ..."
 python3 /opt/tv/scripts/admin.py --bootstrap || echo "[entrypoint] تحذير: فشلت التهيئة"
 
@@ -57,13 +56,31 @@ echo "[entrypoint] تشغيل لوحة التحكم على 127.0.0.1:${ADMIN_POR
         python3 /opt/tv/scripts/admin.py >> /var/vod/admin.log 2>&1
         echo "[entrypoint] admin.py توقف — إعادة التشغيل بعد 3 ثوان" >> /var/vod/admin.log
         sleep 3
-        # تقليم السجل حتى لا يتضخم
         if [ -f /var/vod/admin.log ] && [ "$(wc -c < /var/vod/admin.log)" -gt 1000000 ]; then
             tail -n 200 /var/vod/admin.log > /var/vod/admin.log.new
             mv /var/vod/admin.log.new /var/vod/admin.log
         fi
     done
 ) &
+
+# ---------- توليد إعدادات nginx من القالب (خطوة حرجة) ----------
+# بدون هذه الخطوة يقلع nginx بالإعدادات الافتراضية المدمجة (منفذ 80)
+# ويفشل فحص الصحة على المنفذ $PORT — قائمة بيضاء تُستبدل متغيرات القالب فقط
+# ولا تُمس متغيرات nginx مثل $tv_proto
+NGINX_CONF="$(dirname "$NGINX_BIN")/../conf/nginx.conf"
+mkdir -p "$(dirname "$NGINX_CONF")"
+envsubst '$PORT,$ERROR_LOG,$MAPS_DIR,$CHANNELS_CONF,$ADMIN_PORT,$WWW_DIR' \
+    < /opt/tv/nginx.conf.template > "$NGINX_CONF"
+echo "[entrypoint] أُنتجت إعدادات nginx: $NGINX_CONF"
+
+# فحص الإعدادات قبل الإقلاع — عند الفشل نطبع الملف الناتج لتشخيص سريع
+"$NGINX_BIN" -t > /tmp/nginx_test.log 2>&1
+TEST_RC=$?
+tail -n 3 /tmp/nginx_test.log
+if [ "$TEST_RC" -ne 0 ]; then
+    echo "[entrypoint] تحذير: فشل فحص إعدادات nginx — آخر 40 سطراً من الملف الناتج:"
+    tail -n 40 "$NGINX_CONF"
+fi
 
 echo "[entrypoint] nginx جاهز على المنفذ ${PORT} — لوحة التحكم: /admin/ — صفحة القنوات: /"
 
