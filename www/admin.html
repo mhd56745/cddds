@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة التحكم</title>
+<style>
+    :root {
+        --bg: #0b1020; --card: #141b33; --card2: #101731; --line: #232e57;
+        --accent: #4f8cff; --accent2: #22c55e; --danger: #ef4444; --warn: #f59e0b;
+        --text: #eef2ff; --muted: #93a0c2; --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: "Segoe UI", Tahoma, "Noto Sans Arabic", Arial, sans-serif;
+        background: radial-gradient(1200px 600px at 80% -10%, #1b2650 0%, var(--bg) 55%);
+        color: var(--text); min-height: 100vh; padding: 0 14px 60px;
+    }
+    .hidden { display: none !important; }
+    a { color: var(--accent); text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+    input, select, textarea {
+        font-family: inherit; width: 100%; color: var(--text);
+        background: #0d1428; border: 1px solid var(--line); border-radius: 10px;
+        padding: 10px 12px; font-size: 14px; outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    textarea { min-height: 130px; resize: vertical; direction: ltr; text-align: left; font-size: 12px; }
+
+    /* ---------- دخول ---------- */
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .login-card {
+        width: 100%; max-width: 380px; background: var(--card);
+        border: 1px solid var(--line); border-radius: var(--radius); padding: 30px 26px;
+        box-shadow: 0 18px 50px rgba(0,0,0,.45);
+    }
+    .login-card h1 { font-size: 20px; margin-bottom: 6px; }
+    .login-card p { color: var(--muted); font-size: 13px; margin-bottom: 18px; line-height: 1.8; }
+    .login-card .err { color: var(--danger); font-size: 13px; min-height: 18px; margin: 8px 0; }
+
+    /* ---------- الهيكل ---------- */
+    .topbar {
+        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+        padding: 16px 2px;
+    }
+    .brand { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 9px; }
+    .brand .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--danger);
+        box-shadow: 0 0 12px var(--danger); animation: pulse 1.6s infinite; }
+    @keyframes pulse { 0%,100% {opacity: 1;} 50% {opacity: .35;} }
+    .topbar .spacer { flex: 1; }
+    .btn {
+        border: 1px solid var(--line); background: #182142; color: var(--text);
+        padding: 9px 16px; border-radius: 10px; font-size: 13.5px; transition: .15s;
+    }
+    .btn:hover { border-color: var(--accent); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+    .btn.primary:hover { filter: brightness(1.1); }
+    .btn.danger { color: #ffb4b4; border-color: #5b2530; }
+    .btn.danger:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .btn.small { padding: 6px 12px; font-size: 12.5px; border-radius: 8px; }
+
+    .tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--line); margin-bottom: 18px; flex-wrap: wrap; }
+    .tabs button {
+        background: none; border: none; color: var(--muted); font-size: 15px;
+        padding: 10px 16px; border-bottom: 2px solid transparent; margin-bottom: -1px;
+    }
+    .tabs button.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 700; }
+
+    .wrap { max-width: 1020px; margin: 0 auto; }
+    .panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+        padding: 18px; margin-bottom: 18px; }
+    .panel h2 { font-size: 16px; margin-bottom: 14px; }
+    .panel .hint { color: var(--muted); font-size: 12.5px; line-height: 1.9; margin-top: 8px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid3 { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end; }
+    @media (max-width: 760px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+    label.fld { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 5px; }
+    .fld-box { margin-bottom: 12px; }
+
+    /* ---------- بطاقات القنوات ---------- */
+    .ch-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+        padding: 16px; margin-bottom: 14px; }
+    .ch-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .ch-head .name { font-size: 16.5px; font-weight: 700; }
+    .chip { font-size: 11px; border: 1px solid var(--line); color: var(--muted);
+        border-radius: 999px; padding: 3px 10px; }
+    .chip.vod { color: #9dd0ff; border-color: #2b4a7a; }
+    .chip.live { color: #ffb1b1; border-color: #5b2530; }
+    .chip.id { direction: ltr; }
+    .now-line { background: var(--card2); border: 1px dashed var(--line); border-radius: 10px;
+        padding: 9px 12px; font-size: 13px; color: #cfe0ff; margin-bottom: 12px; }
+    .now-line b { color: #fff; }
+    .now-line .sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
+    .progress { height: 5px; background: #0d1428; border-radius: 99px; overflow: hidden; margin-top: 6px; }
+    .progress i { display: block; height: 100%; background: var(--accent); }
+
+    .pub-grid { display: grid; gap: 8px; }
+    .pub-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .pub-row .lbl { font-size: 12.5px; color: var(--muted); min-width: 130px; }
+    .pub-row code {
+        flex: 1; min-width: 200px; direction: ltr; text-align: left; font-size: 12px;
+        color: #bcd0ff; background: #0d1428; border: 1px dashed var(--line);
+        border-radius: 8px; padding: 7px 10px; overflow-wrap: anywhere;
+    }
+    .ch-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+    /* ---------- محرر القائمة ---------- */
+    .pl-editor { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+    @media (max-width: 760px) { .pl-editor { grid-template-columns: 1fr; } }
+    .pl-col { background: var(--card2); border: 1px solid var(--line); border-radius: 10px;
+        padding: 10px; max-height: 240px; overflow: auto; }
+    .pl-col h4 { font-size: 12.5px; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
+    .pl-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 8px;
+        font-size: 13px; cursor: pointer; }
+    .pl-item:hover { background: #182142; }
+    .pl-item .t { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pl-item .d { color: var(--muted); font-size: 11px; direction: ltr; }
+    .pl-item .mini { border: 1px solid var(--line); background: #182142; color: var(--text);
+        border-radius: 6px; padding: 2px 8px; font-size: 11px; }
+    .pl-empty { color: var(--muted); font-size: 12.5px; padding: 8px; }
+
+    /* ---------- مكتبة الفيديو ---------- */
+    .vid-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+        padding: 14px; margin-bottom: 12px; }
+    .vid-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .vid-head .name { font-weight: 700; font-size: 15px; flex: 1; min-width: 160px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .meta { color: var(--muted); font-size: 12px; display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; direction: ltr; }
+    .badge { font-size: 11.5px; border-radius: 999px; padding: 3px 10px; border: 1px solid; }
+    .badge.ready { color: #86efac; border-color: #14532d; background: rgba(34,197,94,.08); }
+    .badge.busy  { color: #9dd0ff; border-color: #2b4a7a; background: rgba(79,140,255,.08); }
+    .badge.error { color: #ffb4b4; border-color: #5b2530; background: rgba(239,68,68,.08); }
+    .err-text { color: #ffb4b4; font-size: 12.5px; margin-top: 8px; line-height: 1.7; }
+    .url-line { direction: ltr; text-align: left; color: var(--muted); font-size: 11px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 6px; }
+
+    .toast {
+        position: fixed; bottom: 22px; right: 50%; transform: translateX(50%);
+        background: #10b981; color: #04281a; font-weight: 700;
+        padding: 10px 18px; border-radius: 999px; font-size: 14px;
+        opacity: 0; pointer-events: none; transition: .3s; z-index: 50;
+    }
+    .toast.show { opacity: 1; }
+    .toast.err { background: var(--danger); color: #fff; }
+</style>
+</head>
+<body>
+
+<!-- ========== شاشة الدخول ========== -->
+<div class="login-wrap" id="loginView">
+    <div class="login-card">
+        <h1>لوحة التحكم</h1>
+        <p>أدخل كلمة مرور اللوحة للإدارة (متغير البيئة <b>ADMIN_PASSWORD</b> — الافتراضية <code>admin123</code>، غيّرها من إعدادات Koyeb).</p>
+        <div class="fld-box"><input type="password" id="pwd" placeholder="كلمة المرور" autocomplete="current-password"></div>
+        <button class="btn primary" id="loginBtn" style="width:100%">دخول</button>
+        <div class="err" id="loginErr"></div>
+    </div>
+</div>
+
+<!-- ========== التطبيق ========== -->
+<div class="wrap hidden" id="appView">
+    <div class="topbar">
+        <div class="brand"><span class="dot"></span><span id="brandName">لوحة التحكم</span></div>
+        <div class="spacer"></div>
+        <a class="btn" href="/" target="_blank">فتح الموقع ↗</a>
+        <button class="btn" id="logoutBtn">خروج</button>
+    </div>
+
+    <div class="tabs">
+        <button data-tab="channels" class="active">القنوات</button>
+        <button data-tab="library">مكتبة الفيديو</button>
+        <button data-tab="backup">النسخ الاحتياطي</button>
+    </div>
+
+    <!-- ===== القنوات ===== -->
+    <section id="tab-channels">
+        <div class="panel">
+            <h2>إنشاء قناة جديدة</h2>
+            <div class="grid3">
+                <div class="fld-box"><label class="fld">اسم القناة</label><input id="chName" placeholder="مثال: أفلام 24"></div>
+                <div class="fld-box"><label class="fld">النوع</label>
+                    <select id="chType">
+                        <option value="vod">قناة فيديو (قائمة تشغيل 24/7)</option>
+                        <option value="restream">بث خارجي (رابط m3u8 / TS)</option>
+                    </select></div>
+                <div class="fld-box"><label class="fld">المعرّف (اختياري — لاتيني)</label><input id="chId" placeholder="movies" style="direction:ltr"></div>
+            </div>
+
+            <div id="vodFields">
+                <div class="pl-editor">
+                    <div class="pl-col" id="plAvailable"><h4>فيديوهات المكتبة (اضغط للإضافة)</h4></div>
+                    <div class="pl-col" id="plSelected"><h4>قائمة التشغيل (بالترتيب)</h4></div>
+                </div>
+                <p class="hint">تُعرض الفيديوهات بالترتيب ثم تتكرر تلقائياً 24/7 — كل مشاهدي القناة يرون نفس المحتوى في نفس اللحظة.</p>
+            </div>
+
+            <div id="restreamFields" class="hidden">
+                <div class="grid2">
+                    <div class="fld-box"><label class="fld">رابط البث الخارجي</label><input id="chUrl" placeholder="https://example.com/live/index.m3u8" style="direction:ltr"></div>
+                    <div class="fld-box"><label class="fld">النوع</label>
+                        <select id="chSourceType">
+                            <option value="auto">اكتشاف تلقائي</option>
+                            <option value="hls">HLS (m3u8)</option>
+                            <option value="ts">TS متواصل</option>
+                        </select></div>
+                </div>
+                <p class="hint">يدعم روابط قوائم m3u8 وروابط TS المتواصلة — يُعاد بثها عبر محطتك مع روابط مستقرة.</p>
+            </div>
+
+            <div style="margin-top:14px"><button class="btn primary" id="createChBtn">إنشاء القناة</button></div>
+        </div>
+
+        <h2 style="margin: 4px 0 12px; font-size:16px">قنواتي</h2>
+        <div id="channelsList"></div>
+    </section>
+
+    <!-- ===== مكتبة الفيديو ===== -->
+    <section id="tab-library" class="hidden">
+        <div class="panel">
+            <h2>إضافة فيديو بالرابط المباشر</h2>
+            <div class="grid2">
+                <div class="fld-box"><label class="fld">اسم العرض</label><input id="vidName" placeholder="مثال: الحلقة 1"></div>
+                <div class="fld-box"><label class="fld">رابط MP4/MKV مباشر</label><input id="vidUrl" placeholder="https://.../video.mp4" style="direction:ltr"></div>
+            </div>
+            <button class="btn primary" id="addVidBtn">إضافة إلى المكتبة</button>
+            <p class="hint">
+                الصيغ المدعومة: <b>MP4/MOV/M4V</b> بفيديو H.264 وصوت AAC (الأفضل)، و<b>MKV</b> بفيديو H.264.
+                ملفات H.265/HEVC وروابط magnet <b>غير مدعومة</b> — لا توجد أداة تحويل في المحطة.
+                يتم تنزيل الملف إلى خادم المحطة ثم فحصه تلقائياً.
+                <span id="usageLine"></span>
+            </p>
+        </div>
+        <div id="libraryList"></div>
+    </section>
+
+    <!-- ===== النسخ الاحتياطي ===== -->
+    <section id="tab-backup" class="hidden">
+        <div class="panel">
+            <h2>تصدير الإعدادات</h2>
+            <p class="hint" style="margin-bottom:10px">
+                <b style="color:var(--warn)">مهم:</b> تخزين Koyeb مؤقت ويُمسح مع كل نشر جديد (القنوات والفيديوهات المنزّلة).
+                للاحتفاظ بها: انسخ البيانات أدناه وضعها في متغير البيئة <b>SEED_JSON</b> في إعدادات خدمة Koyeb —
+                تعود القنوات تلقائياً عند كل إقلاع وتُعاد تنزيل الفيديوهات من روابطها.
+            </p>
+            <textarea id="exportBox" readonly></textarea>
+            <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap">
+                <button class="btn" id="copyExportBtn">نسخ</button>
+                <button class="btn" id="dlExportBtn">تنزيل ملف json</button>
+                <button class="btn" id="refreshExportBtn">تحديث</button>
+            </div>
+        </div>
+        <div class="panel">
+            <h2>استيراد إعدادات</h2>
+            <p class="hint" style="margin-bottom:10px">الصق بيانات مُصدَّرة سابقاً (سيتم استبدال القنوات والمكتبة الحالية بالكامل).</p>
+            <textarea id="importBox" placeholder='{"version":1,"videos":[...],"channels":[...]}'></textarea>
+            <div style="margin-top:10px"><button class="btn danger" id="importBtn">استيراد (استبدال كامل)</button></div>
+        </div>
+    </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+"use strict";
+
+// ================= أدوات عامة =================
+var $ = function (id) { return document.getElementById(id); };
+var state = { authed: false, authEnabled: true, videos: [], channels: [], pollTimer: null, editOpen: null };
+var draftSel = []; // قائمة التشغيل قيد الإنشاء
+
+function toast(msg, isErr) {
+    var t = $("toast");
+    t.textContent = msg;
+    t.classList.toggle("err", !!isErr);
+    t.classList.add("show");
+    setTimeout(function () { t.classList.remove("show"); }, isErr ? 2600 : 1500);
+}
+function fmtDur(ms) {
+    if (!ms) return "—";
+    var s = Math.round(ms / 1000), m = Math.floor(s / 60);
+    s = s % 60;
+    return m + ":" + (s < 10 ? "0" : "") + s;
+}
+function fmtMB(b) { return b ? (b / 1e6).toFixed(1) + "MB" : "—"; }
+function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+}
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(function () { toast("تم النسخ ✓"); });
+}
+
+function api(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
+    return fetch(path, opts).then(function (res) {
+        return res.json().catch(function () { return null; }).then(function (data) {
+            if (res.status === 401) {
+                showLogin();
+                throw new Error((data && data.error) || "غير مصرح");
+            }
+            if (!res.ok || (data && data.ok === false)) {
+                throw new Error((data && data.error) || ("خطأ " + res.status));
+            }
+            return data;
+        });
+    });
+}
+
+// ================= الدخول =================
+function showLogin() {
+    $("loginView").classList.remove("hidden");
+    $("appView").classList.add("hidden");
+}
+function showApp() {
+    $("loginView").classList.add("hidden");
+    $("appView").classList.remove("hidden");
+    loadAll();
+}
+$("loginBtn").onclick = function () {
+    $("loginErr").textContent = "";
+    api("/api/login", { method: "POST", body: JSON.stringify({ password: $("pwd").value }) })
+        .then(function () { $("pwd").value = ""; showApp(); })
+        .catch(function (e) { $("loginErr").textContent = e.message; });
+};
+$("pwd").addEventListener("keydown", function (e) { if (e.key === "Enter") $("loginBtn").click(); });
+$("logoutBtn").onclick = function () {
+    api("/api/logout", { method: "POST" }).then(showLogin).catch(function () {});
+};
+
+// ================= التبويبات =================
+Array.prototype.forEach.call(document.querySelectorAll(".tabs button"), function (b) {
+    b.onclick = function () {
+        Array.prototype.forEach.call(document.querySelectorAll(".tabs button"), function (x) { x.classList.remove("active"); });
+        b.classList.add("active");
+        ["channels", "library", "backup"].forEach(function (t) {
+            $("tab-" + t).classList.toggle("hidden", t !== b.dataset.tab);
+        });
+        if (b.dataset.tab === "backup") refreshExport();
+    };
+});
+
+// ================= تحميل البيانات =================
+function loadAll() {
+    return Promise.all([
+        api("/api/channels"),
+        api("/api/library")
+    ]).then(function (rs) {
+        state.channels = rs[0].channels || [];
+        $("brandName").textContent = rs[0].app_name || "لوحة التحكم";
+        state.videos = rs[1].videos || [];
+        renderUsage(rs[1]);
+        renderChannels();
+        renderLibrary();
+        renderDraftEditor();
+        schedulePoll();
+    }).catch(function (e) {
+        if (state.authed) toast(e.message, true);
+    });
+}
+function schedulePoll() {
+    if (state.pollTimer) clearTimeout(state.pollTimer);
+    var busy = state.videos.some(function (v) { return v.status === "downloading" || v.status === "queued"; });
+    if (busy) state.pollTimer = setTimeout(function () {
+        api("/api/library").then(function (r) {
+            state.videos = r.videos || [];
+            renderUsage(r);
+            renderLibrary();
+            renderChannels();
+            schedulePoll();
+        }).catch(function () {});
+    }, 2500);
+}
+function renderUsage(r) {
+    var used = (r.usage_bytes / 1e6).toFixed(0), lim = (r.limit_bytes / 1e6).toFixed(0);
+    $("usageLine").textContent = " — استهلاك المكتبة: " + used + "MB من " + lim + "MB";
+}
+
+// ================= محرر قائمة التشغيل =================
+function renderDraftEditor() {
+    var avail = $("plAvailable"), sel = $("plSelected");
+    avail.textContent = ""; sel.textContent = "";
+    avail.appendChild(el("h4", null, "فيديوهات المكتبة (اضغط للإضافة)"));
+    sel.appendChild(el("h4", null, "قائمة التشغيل (بالترتيب)"));
+    var ready = state.videos.filter(function (v) { return v.status === "ready"; });
+    if (!ready.length) avail.appendChild(el("div", "pl-empty", "لا توجد فيديوهات جاهزة — أضفها أولاً من تبويب «مكتبة الفيديو»"));
+    ready.forEach(function (v) {
+        if (draftSel.indexOf(v.id) >= 0) return;
+        var it = el("div", "pl-item");
+        it.appendChild(el("span", "t", v.name));
+        it.appendChild(el("span", "d", fmtDur(v.duration_ms)));
+        it.onclick = function () { draftSel.push(v.id); renderDraftEditor(); };
+        avail.appendChild(it);
+    });
+    if (!draftSel.length) sel.appendChild(el("div", "pl-empty", "القائمة فارغة — أضف فيديوهات من اليمين"));
+    draftSel.forEach(function (vid, i) {
+        var v = state.videos.filter(function (x) { return x.id === vid; })[0];
+        if (!v) return;
+        var it = el("div", "pl-item");
+        it.appendChild(el("span", "t", (i + 1) + ". " + v.name));
+        it.appendChild(el("span", "d", fmtDur(v.duration_ms)));
+        var up = el("button", "mini", "▲"); up.onclick = function (e) {
+            e.stopPropagation();
+            if (i > 0) { draftSel.splice(i - 1, 0, draftSel.splice(i, 1)[0]); renderDraftEditor(); }
+        };
+        var rm = el("button", "mini", "✕"); rm.onclick = function (e) {
+            e.stopPropagation();
+            draftSel.splice(i, 1); renderDraftEditor();
+        };
+        it.appendChild(up); it.appendChild(rm);
+        sel.appendChild(it);
+    });
+}
+$("chType").onchange = function () {
+    var vod = $("chType").value === "vod";
+    $("vodFields").classList.toggle("hidden", !vod);
+    $("restreamFields").classList.toggle("hidden", vod);
+};
+$("createChBtn").onclick = function () {
+    var payload = {
+        name: $("chName").value, type: $("chType").value,
+        id: $("chId").value.trim() || undefined
+    };
+    if (payload.type === "vod") {
+        payload.playlist = draftSel.slice();
+    } else {
+        payload.source_url = $("chUrl").value;
+        payload.source_type = $("chSourceType").value;
+    }
+    api("/api/channels", { method: "POST", body: JSON.stringify(payload) })
+        .then(function () {
+            draftSel = [];
+            $("chName").value = ""; $("chId").value = ""; $("chUrl").value = "";
+            toast("تم إنشاء القناة ✓"); loadAll();
+        })
+        .catch(function (e) { toast(e.message, true); });
+};
+
+// ================= عرض القنوات =================
+function pubRows(ch) {
+    var origin = location.origin;
+    var rows = [
+        { lbl: "رابط HLS (m3u8):", code: origin + ch.url },
+        { lbl: "صفحة المشغل:", code: origin + "/watch/" + ch.id },
+        { lbl: "كود التضمين:", code: '<iframe src="' + origin + "/embed/" + ch.id + '" width="640" height="360" frameborder="0" allowfullscreen></iframe>' }
+    ];
+    return rows;
+}
+function renderChannels() {
+    var box = $("channelsList");
+    box.textContent = "";
+    if (!state.channels.length) {
+        var p = el("div", "panel");
+        p.appendChild(el("p", "hint", "لا توجد قنوات بعد — أنشئ أول قناة من النموذج أعلاه."));
+        box.appendChild(p);
+        return;
+    }
+    state.channels.forEach(function (ch) {
+        var card = el("div", "ch-card");
+        var head = el("div", "ch-head");
+        head.appendChild(el("span", "name", ch.name));
+        head.appendChild(el("span", "chip " + (ch.type === "vod" ? "vod" : "live"),
+            ch.type === "vod" ? "قناة مكتبة 24/7" : "بث خارجي"));
+        head.appendChild(el("span", "chip id", ch.id));
+        card.appendChild(head);
+
+        if (ch.type === "vod") {
+            var nl = el("div", "now-line");
+            if (ch.now) {
+                nl.appendChild(el("div", null, "")).appendChild(el("b", null, "يُبث الآن: " + ch.now.title));
+                var sub = el("div", "sub", "الموضع " + fmtDur(ch.now.position_ms) + " / " +
+                    fmtDur(ch.now.duration_ms) + " — التالي: " + ch.now.next);
+                nl.appendChild(sub);
+                var pr = el("div", "progress");
+                var bar = el("i");
+                bar.style.width = Math.min(100, 100 * ch.now.position_ms / Math.max(1, ch.now.duration_ms)) + "%";
+                pr.appendChild(bar);
+                nl.appendChild(pr);
+            } else {
+                nl.appendChild(el("div", null, "لا يوجد بث — أضف فيديوهات جاهزة إلى قائمة القناة"));
+            }
+            card.appendChild(nl);
+        }
+
+        var grid = el("div", "pub-grid");
+        pubRows(ch).forEach(function (r) {
+            var row = el("div", "pub-row");
+            row.appendChild(el("span", "lbl", r.lbl));
+            var c = el("code", null, r.code);
+            row.appendChild(c);
+            var b = el("button", "btn small", "نسخ");
+            b.onclick = function () { copyText(r.code); };
+            row.appendChild(b);
+            grid.appendChild(row);
+        });
+        card.appendChild(grid);
+
+        var actions = el("div", "ch-actions");
+        var watch = el("a", "btn small", "مشاهدة ↗");
+        watch.href = "/watch/" + ch.id; watch.target = "_blank";
+        actions.appendChild(watch);
+        if (ch.type === "vod") {
+            var edit = el("button", "btn small", state.editOpen === ch.id ? "إغلاق التعديل" : "تعديل القائمة");
+            edit.onclick = function () {
+                state.editOpen = (state.editOpen === ch.id) ? null : ch.id;
+                renderChannels();
+            };
+            actions.appendChild(edit);
+        }
+        var del = el("button", "btn small danger", "حذف القناة");
+        del.onclick = function () {
+            if (!confirm("حذف القناة «" + ch.name + "»؟")) return;
+            api("/api/channels/" + ch.id, { method: "DELETE" })
+                .then(function () { toast("حُذفت القناة"); loadAll(); })
+                .catch(function (e) { toast(e.message, true); });
+        };
+        actions.appendChild(del);
+        card.appendChild(actions);
+
+        if (state.editOpen === ch.id && ch.type === "vod") {
+            var ed = el("div", "panel");
+            ed.style.marginTop = "12px";
+            ed.appendChild(el("h2", null, "تعديل قائمة: " + ch.name));
+            var holder = el("div");
+            ed.appendChild(holder);
+            var editor = playlistEditor(holder, ch.playlist || []);
+            var save = el("button", "btn primary", "حفظ القائمة");
+            save.onclick = function () {
+                api("/api/channels/" + ch.id, { method: "PUT", body: JSON.stringify({ playlist: editor.get() }) })
+                    .then(function () {
+                        state.editOpen = null;
+                        toast("حُفظت القائمة ✓"); loadAll();
+                    })
+                    .catch(function (e) { toast(e.message, true); });
+            };
+            ed.appendChild(save);
+            card.appendChild(ed);
+        }
+        box.appendChild(card);
+    });
+}
+
+// محرر قائمة قابل لإعادة الاستخدام (يُستخدم في تعديل القناة)
+function playlistEditor(container, initial) {
+    var sel = initial.slice();
+    container.classList.add("pl-editor");
+    var avail = el("div", "pl-col"), selBox = el("div", "pl-col");
+    container.appendChild(avail); container.appendChild(selBox);
+
+    function render() {
+        avail.textContent = ""; selBox.textContent = "";
+        avail.appendChild(el("h4", null, "فيديوهات المكتبة"));
+        selBox.appendChild(el("h4", null, "قائمة التشغيل (بالترتيب)"));
+        var ready = state.videos.filter(function (v) { return v.status === "ready"; });
+        ready.forEach(function (v) {
+            if (sel.indexOf(v.id) >= 0) return;
+            var it = el("div", "pl-item");
+            it.appendChild(el("span", "t", v.name));
+            it.appendChild(el("span", "d", fmtDur(v.duration_ms)));
+            it.onclick = function () { sel.push(v.id); render(); };
+            avail.appendChild(it);
+        });
+        if (!sel.length) selBox.appendChild(el("div", "pl-empty", "فارغة"));
+        sel.forEach(function (vid, i) {
+            var v = state.videos.filter(function (x) { return x.id === vid; })[0];
+            if (!v) return;
+            var it = el("div", "pl-item");
+            it.appendChild(el("span", "t", (i + 1) + ". " + v.name));
+            var up = el("button", "mini", "▲"); up.onclick = function (e) {
+                e.stopPropagation();
+                if (i > 0) { sel.splice(i - 1, 0, sel.splice(i, 1)[0]); render(); }
+            };
+            var rm = el("button", "mini", "✕"); rm.onclick = function (e) {
+                e.stopPropagation(); sel.splice(i, 1); render();
+            };
+            it.appendChild(up); it.appendChild(rm);
+            selBox.appendChild(it);
+        });
+    }
+    render();
+    return { get: function () { return sel.slice(); } };
+}
+
+// ================= مكتبة الفيديو =================
+$("addVidBtn").onclick = function () {
+    api("/api/videos", { method: "POST", body: JSON.stringify({ name: $("vidName").value, url: $("vidUrl").value }) })
+        .then(function () {
+            $("vidName").value = ""; $("vidUrl").value = "";
+            toast("أُضيف — جارٍ التنزيل…"); loadAll();
+            switchTab("library");
+        })
+        .catch(function (e) { toast(e.message, true); });
+};
+function switchTab(t) {
+    Array.prototype.forEach.call(document.querySelectorAll(".tabs button"), function (x) {
+        x.classList.toggle("active", x.dataset.tab === t);
+    });
+    ["channels", "library", "backup"].forEach(function (k) {
+        $("tab-" + k).classList.toggle("hidden", k !== t);
+    });
+}
+function renderLibrary() {
+    var box = $("libraryList");
+    box.textContent = "";
+    if (!state.videos.length) {
+        var p = el("div", "panel");
+        p.appendChild(el("p", "hint", "المكتبة فارغة — أضف أول فيديو بالرابط المباشر من الأعلى."));
+        box.appendChild(p);
+        return;
+    }
+    state.videos.forEach(function (v) {
+        var card = el("div", "vid-card");
+        var head = el("div", "vid-head");
+        head.appendChild(el("span", "name", v.name));
+        var badge;
+        if (v.status === "ready") badge = el("span", "badge ready", "جاهز");
+        else if (v.status === "downloading" || v.status === "queued") {
+            var pct = "";
+            if (v.status === "downloading" && v.size_bytes && v.done_bytes) {
+                pct = " " + Math.min(99, Math.round(100 * v.done_bytes / v.size_bytes)) + "%";
+            }
+            badge = el("span", "badge busy", v.status === "queued" ? "في الطابور" : "جارٍ التنزيل" + pct);
+        } else badge = el("span", "badge error", "خطأ");
+        head.appendChild(badge);
+        var del = el("button", "btn small danger", "حذف");
+        del.onclick = function () {
+            if (!confirm("حذف «" + v.name + "» من المكتبة وإزالته من كل القوائم؟")) return;
+            api("/api/videos/" + v.id, { method: "DELETE" })
+                .then(function () { toast("حُذف"); loadAll(); })
+                .catch(function (e) { toast(e.message, true); });
+        };
+        head.appendChild(del);
+        card.appendChild(head);
+
+        if (v.status === "downloading" && v.size_bytes) {
+            var pr = el("div", "progress");
+            var bar = el("i");
+            bar.style.width = Math.min(100, 100 * (v.done_bytes || 0) / v.size_bytes) + "%";
+            pr.appendChild(bar);
+            card.appendChild(pr);
+        }
+        if (v.error) card.appendChild(el("div", "err-text", v.error));
+
+        var meta = el("div", "meta");
+        meta.appendChild(el("span", null, "المدة: " + fmtDur(v.duration_ms)));
+        meta.appendChild(el("span", null, "الحجم: " + fmtMB(v.size_bytes)));
+        if (v.video) meta.appendChild(el("span", null, "فيديو: " + (v.video === "avc1" ? "H.264 ✓" : v.video)));
+        if (v.audio) meta.appendChild(el("span", null, "صوت: " + v.audio.toUpperCase()));
+        if (v.source === "embedded") meta.appendChild(el("span", null, "مدمج في الصورة"));
+        card.appendChild(meta);
+
+        if (v.url) card.appendChild(el("div", "url-line", v.url));
+
+        if (v.status === "error" && v.url) {
+            var retry = el("button", "btn small", "إعادة المحاولة");
+            retry.style.marginTop = "8px";
+            retry.onclick = function () {
+                api("/api/videos/" + v.id + "/retry", { method: "POST" })
+                    .then(function () { toast("أُعيد إلى الطابور"); loadAll(); })
+                    .catch(function (e) { toast(e.message, true); });
+            };
+            card.appendChild(retry);
+        }
+        box.appendChild(card);
+    });
+}
+
+// ================= النسخ الاحتياطي =================
+function refreshExport() {
+    api("/api/export").then(function (r) {
+        $("exportBox").value = JSON.stringify(r.data, null, 2);
+    }).catch(function (e) { toast(e.message, true); });
+}
+$("refreshExportBtn").onclick = refreshExport;
+$("copyExportBtn").onclick = function () { copyText($("exportBox").value); };
+$("dlExportBtn").onclick = function () {
+    var blob = new Blob([$("exportBox").value], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "koyeb-tv-backup.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+};
+$("importBtn").onclick = function () {
+    var txt = $("importBox").value.trim();
+    if (!txt) { toast("الصق البيانات أولاً", true); return; }
+    if (!confirm("سيتم استبدال كل القنوات والمكتبة الحالية — متابعة؟")) return;
+    var parsed;
+    try { parsed = JSON.parse(txt); } catch (e) { toast("JSON غير صالح", true); return; }
+    api("/api/import", { method: "POST", body: JSON.stringify({ data: parsed }) })
+        .then(function (r) {
+            toast("تم الاستيراد: " + r.imported.videos + " فيديو، " + r.imported.channels + " قناة ✓");
+            $("importBox").value = "";
+            loadAll();
+        })
+        .catch(function (e) { toast(e.message, true); });
+};
+
+// ================= البداية =================
+api("/api/session").then(function (r) {
+    state.authEnabled = r.auth_enabled;
+    $("brandName").textContent = r.app_name || "لوحة التحكم";
+    if (!r.auth_enabled || r.authed) { state.authed = true; showApp(); }
+    else showLogin();
+}).catch(showLogin);
+
+})();
+</script>
+</body>
+</html>
